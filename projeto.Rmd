@@ -1,0 +1,126 @@
+---
+title: "Projeto de Estatística Exploratória"
+output: html_document
+date: "2023-01-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library("readxl")
+library(dplyr)
+library(ggplot2)
+
+meus_dados <- readxl::read_excel("C:/Users/victo/OneDrive/Área de Trabalho/MAIN/projeto_est_exp/sp_beaches.xlsx", sheet=1) %>% 
+dplyr::filter(City == "SÃO VICENTE") %>% mutate(Enterococcus = as.numeric(Enterococcus)) %>% group_by(Beach) %>% 
+  add_count(across(Beach))
+praias <- unique(meus_dados$Beach)
+
+```
+
+# Análise estatistica da qualidade da agua das praias de SP
+
+Este é um projeto da cadeira de Estatistica Exploratória I da UFRPE. O objetivo deste trabalho é a analise estatistica da base de dados "sp_beaches" que contem dados sobre a qualidade da agua das prias de São Paulo, mais especificamente da praia de SÃO VICENTE.
+
+
+## Questões
+O fluxo desse trabalho se concentrará em responder as 5 questões solicitadas pelo professor que são:
+
+- Encontre média, desvio-padrão, mediana, Q1, Q3, mínimo e máximo dos enterococos de cada praia (summarise)
+
+- Faça um gráfico de barras com a variável Beach, ordenando da praia com maior quantidades de amostras para a menor. Colorir gráfico com base na praia. Anotar as porcentagens no topo das barras (ggplot2).
+
+- Repita a questão 2, fazendo desta vez um gráfico de pizza (ggplot2).
+
+- Fazer um histograma com todos os dados de enterococos das praias da sua cidade (ggplot2).
+
+- Fazer box-plots de todas as praias da sua cidade num único gráfico (ggplot2).
+
+### Definições
+#### Média
+A média representa o valor médio da soma de todos os valores da quantidade de Enterococos de uma determinada praia.
+
+#### Desvio padrão
+O desvio padrão representa o quão disperso está um conjunto de valores. Em resumo, quanto mais distante da média mais disperso é o conjunto e vice-versa.
+
+#### Mediana
+A mediana representa o valor do meio do conjunto das quantidades de Enterococus.
+
+#### Primeiro e terceiro quartil
+O primeiro quartil representa a mediana da metade inferior dos dados enquanto o terceiro quartil representa a mediana da metade superior.
+
+#### Valor máximo e valor minimo
+É o maior e o menor valor do conjunto.
+
+### Encontre média, desvio-padrão, mediana, Q1, Q3, mínimo e máximo dos enterococos de cada praia
+```{r , results='asis', echo=FALSE}
+retorna_parametros <- function(i = 1){
+  if(i <= length(praias)){
+    praia <- meus_dados %>% filter(Beach == praias[i])
+    enterococus <- (praia$Enterococcus)
+    cat("\n### ", praias[i], "\n") %>% 
+      cat("\nOs valores da quantidade de bactérias encontradas foram:\n")
+      cat("\n - Média:... ", mean(enterococus), "\n" ) %>% 
+      cat("\n - Desvio padrão:...", sd(enterococus), "\n") %>% 
+      cat("\n - Mediana:...", median(enterococus), "\n") %>%
+      cat("\n - Primeiro Quartil:...", quantile(enterococus, probs = 0.25), "\n") %>%
+      cat("\n - Terceiro Quartil:...", quantile(enterococus, probs = 0.75), "\n") %>%
+      cat("\n - Valor máximo:...", max(enterococus), "\n") %>%
+      cat("\n - Valor minimo:...", min(enterococus), "\n")
+    retorna_parametros(i = i+1)
+  }
+  
+
+}
+retorna_parametros()
+```
+
+### Faça um gráfico de barras com a variável Beach, ordenando da praia com maior quantidades de amostras para a menor. Colorir gráfico com base na praia. Anotar as porcentagens no topo das barras.
+
+```{r, echo=FALSE}
+
+bar_plot <- ggplot(meus_dados,aes(y=Beach, label = scales::percent(prop.table(stat(count))))) + 
+  geom_text(stat = 'count', vjust=-3, color="black",
+            position = position_dodge(0.9), size=3.5)+
+  geom_bar(aes( fill= Beach), width=0.4)+
+  xlim(c(0, 500))+
+  theme_minimal()
+bar_plot
+``` 
+
+É possivel observar que enquanto todas as outras praias apresentam uma quantidade igual de registros, a "PRAINHA(AV. SANTINO BRITO)" possui uma quantidade menor, representando 18.6% dos registros.
+
+### Repita a questão 2, fazendo desta vez um gráfico de pizza.
+
+```{r, echo=FALSE}
+pizza_plot <- ggplot(meus_dados,aes(x="", y=n,fill=Beach)) + 
+  geom_bar( width=1, stat="identity")+
+  coord_polar("y", start=0)
+pizza_plot
+```
+
+O mesmo resultado do grafico anterior poderia ser visto com a mesma clareza aqui, porém a proximidade entre os valores e a quantidade de grupos acaba inutilizando o grafico de tipo pizza.
+
+### Fazer um histograma com todos os dados de enterococos das praias da sua cidade.
+
+```{r, echo=FALSE}
+histogram <- ggplot(meus_dados, aes( x=Enterococcus)) +
+  geom_histogram(binwidth=100, bins=3000, aes(fill=Beach)) +
+  xlim(c(0, 3000)) +
+  ylim(c(0, 100)) +
+  scale_x_continuous(limits = c(0, 3000), n.breaks = 15) 
+histogram
+```
+
+É possivel observar uma grande quantidade de registros com pouco menos de 250 e 500 da bacteria em comparação com a quantidade de registros com mais de 1000.
+
+
+### Fazer box-plots de todas as praias da sua cidade num único gráfico.
+
+```{r, echo=FALSE}
+box_plot <- ggplot(meus_dados, aes(x=Enterococcus, y=Beach)) +
+  geom_boxplot(notch=TRUE) +
+  scale_x_continuous(limits = c(0, 5000), n.breaks = 15)
+box_plot
+```
+
+É possivel observar uma grande quantidade de outliers oque significa que esse conjunto de dados está muito disperso, além disso é possivel observar que a "PRAINHA(AV. SANTINO BRITO)" é a unica com um registro de Enterococcus de 5000.
